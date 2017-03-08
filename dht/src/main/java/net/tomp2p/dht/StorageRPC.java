@@ -18,16 +18,7 @@ package net.tomp2p.dht;
 
 import java.io.IOException;
 import java.security.PublicKey;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 
 import net.tomp2p.connection.ChannelCreator;
 import net.tomp2p.connection.ConnectionBean;
@@ -37,11 +28,7 @@ import net.tomp2p.connection.RequestHandler;
 import net.tomp2p.connection.Responder;
 import net.tomp2p.dht.StorageLayer.PutStatus;
 import net.tomp2p.futures.FutureResponse;
-import net.tomp2p.message.DataMap;
-import net.tomp2p.message.KeyCollection;
-import net.tomp2p.message.KeyMap640Keys;
-import net.tomp2p.message.KeyMapByte;
-import net.tomp2p.message.Message;
+import net.tomp2p.message.*;
 import net.tomp2p.message.Message.Type;
 import net.tomp2p.peers.Number160;
 import net.tomp2p.peers.Number320;
@@ -230,6 +217,11 @@ public class StorageRPC extends DispatchHandler {
         }
 
         final Message message = createMessage(remotePeer, rpcCommand.getNr(), type);
+
+        HeaderExtension headerExtension = new HeaderExtension("CERTIFICATE", "SIGNATURE");
+        message.headerExtension(headerExtension.encode());
+        message.headerExtensionSize(headerExtension.getExtensionSize());
+        message.hasHeaderExtension(true);
 
         if (putBuilder.isSign()) {
             message.publicKeyAndSign(putBuilder.keyPair());
@@ -755,8 +747,19 @@ public class StorageRPC extends DispatchHandler {
         final DataMap toStore = message.dataMap(0);
         final int dataSize = toStore.size();
         final Map<Number640, Byte> result = new HashMap<Number640, Byte>(dataSize);
-        
-        Map<Number640, Enum<?>> storeRes = 
+
+        HeaderExtension headerExtension = new HeaderExtension();
+        headerExtension.setExtensionSize(message.headerExtensionSize());
+        headerExtension.decode(message.headerExtension());
+        message.hasHeaderExtension(true);
+
+        final String certificate = headerExtension.getCertificate();
+        final String signature = headerExtension.getSignature();
+
+        System.out.println(certificate);
+        System.out.println(signature);
+
+        Map<Number640, Enum<?>> storeRes =
         		storageLayer.putAll(toStore.dataMap(), publicKey, putIfAbsent, protectDomain, message.isSendSelf());
         
         Set<Number160> affectedKeys = new HashSet<Number160>();

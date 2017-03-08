@@ -169,6 +169,10 @@ public class Message {
     private transient PeerAddress recipientRelay;
     private int options = 0;
 
+    // Header Extension
+    private int headerExtensionSize;
+    private byte[] headerExtension; // 1500 bytes + 32 bytes(256 bits) = 1532 bytes
+
     // Payload:
     // we can send 8 types
     private Content[] contentTypes = new Content[CONTENT_TYPE_LENGTH];
@@ -550,6 +554,32 @@ public class Message {
 
     /**
      * 
+     * @param headerExtension
+     *            header extension for data certification info
+     * @return This class
+     */
+    public Message headerExtension(byte[] headerExtension) {
+      this.headerExtension = headerExtension;
+      return this;
+    }
+
+    /**
+     * @return This header extension for data certification info
+     */
+    public byte[] headerExtension() {
+      return headerExtension;
+    }
+
+    public int headerExtensionSize() {
+        return headerExtensionSize;
+    }
+
+    public void headerExtensionSize(int size) {
+        this.headerExtensionSize = size;
+    }
+
+    /**
+     * 
      * @param isKeepAlive
      *            True if the connection should remain open. We need to announce this in the header, as otherwise the
      *            other end has an idle handler that will close the connection.
@@ -587,7 +617,21 @@ public class Message {
     public boolean isStreaming() {
         return (options & 2) > 0;
     }
-    
+
+    public boolean hasHeaderExtension() {
+      return (options & 2) > 0;
+    }
+
+    public Message hasHeaderExtension(boolean hasHeaderExtension) {
+      if(hasHeaderExtension) {
+        options |= 2;
+      } else {
+        options &= ~2;
+      }
+
+      return this;
+    }
+
     public Message expectDuplicate(boolean expectDuplicate) {
         if (expectDuplicate) {
             options |= 4;
@@ -962,7 +1006,10 @@ public class Message {
         final StringBuilder sb = new StringBuilder("msgid=");
         return sb.append(messageId()).append(",t=").append(type.toString()).
         	append(",c=").append(RPC.Commands.find(command).toString()).append(",").append(isUdp()?"udp":"tcp").
-        	append(",s=").append(sender).append(",r=").append(recipient).toString();        
+        	append(",s=").append(sender)
+          .append(",r=").append(recipient)
+          .append(",cert=").append(headerExtension)
+          .toString();
     }
 
     // *************************** No transferable objects here *********************************
@@ -1146,6 +1193,8 @@ public class Message {
         message.publicKeyList = this.publicKeyList;
         message.peerSocketAddressList = this.peerSocketAddressList;
         message.signatureEncode = this.signatureEncode;
+
+        message.headerExtension = this.headerExtension;
         
         // these are transient
         //presetContentTypes

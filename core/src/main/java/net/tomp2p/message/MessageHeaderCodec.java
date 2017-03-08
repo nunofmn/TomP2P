@@ -44,7 +44,8 @@ public final class MessageHeaderCodec {
     private MessageHeaderCodec() {
     }
 
-    public static final int HEADER_SIZE = 58;
+    public static final int HEADER_EXTENSION_SIZE = 1500;
+    public static final int HEADER_SIZE = HEADER_EXTENSION_SIZE + 58;
 
     /**
      * Encodes a message object.
@@ -71,6 +72,12 @@ public final class MessageHeaderCodec {
         buffer.writeInt(encodeContentTypes(message.contentTypes())); // 57
         // three bits for the message options, 5 bits for the sender options
         buffer.writeByte((message.sender().options() << 3) | message.options()); // 58
+
+        if(message.hasHeaderExtension()) {
+          LOG.debug("Message has header extension");
+          buffer.writeInt(message.headerExtensionSize());
+          buffer.writeBytes(message.headerExtension());
+        }
     }
 
     /**
@@ -117,6 +124,15 @@ public final class MessageHeaderCodec {
         message.sender(peerAddress);
         message.senderSocket(senderSocket);
         message.recipientSocket(recipientSocket);
+
+        if(message.hasHeaderExtension()) {
+            int headerExtSize = buffer.readInt();
+            byte[] headerExt = buffer.readBytes(headerExtSize).array();
+            message.headerExtension(headerExt);
+            message.headerExtensionSize(headerExtSize);
+            message.hasHeaderExtension(true);
+        }
+
         return message;
     }
 
