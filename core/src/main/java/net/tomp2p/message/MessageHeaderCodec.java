@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 public final class MessageHeaderCodec {
 
     private static final Logger LOG = LoggerFactory.getLogger(MessageHeaderCodec.class);
+    private static final int MAX_CERTIFICATE_SIZE = 1500;
 
     /**
      * Empty constructor.
@@ -72,8 +73,9 @@ public final class MessageHeaderCodec {
         // three bits for the message options, 5 bits for the sender options
         buffer.writeByte((message.sender().options() << 3) | message.options()); // 58
         buffer.writeInt(message.hasCertificate()); // 8
+
         if(message.hasCertificate() == 1) {
-            buffer.writeBytes(message.certificate().getBytes());
+            writeCertificate(buffer, message.certificate());
         }
     }
 
@@ -151,9 +153,23 @@ public final class MessageHeaderCodec {
      * @return a base64 string representing the certificate
      */
     private static String readCertificate(final ByteBuf buffer) {
-        byte[] me = new byte[11];
+        int certificateBufferSize = buffer.readInt();
+        byte[] me = new byte[certificateBufferSize];
         buffer.readBytes(me);
         return new String(me);
+    }
+
+    /**
+     * Writes a Certificate to a Netty buffer.
+     *
+     * @param buffer
+     *            The Netty buffer
+     * @return a base64 string representing the certificate
+     */
+    private static void writeCertificate(final ByteBuf buffer, String certificate) {
+        byte[] certificateBuffer = certificate.getBytes();
+        buffer.writeInt(certificateBuffer.length);
+        buffer.writeBytes(certificateBuffer);
     }
 
     /**
