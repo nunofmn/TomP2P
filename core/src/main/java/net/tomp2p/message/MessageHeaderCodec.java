@@ -71,6 +71,10 @@ public final class MessageHeaderCodec {
         buffer.writeInt(encodeContentTypes(message.contentTypes())); // 57
         // three bits for the message options, 5 bits for the sender options
         buffer.writeByte((message.sender().options() << 3) | message.options()); // 58
+        buffer.writeInt(message.hasCertificate()); // 8
+        if(message.hasCertificate() == 1) {
+            buffer.writeBytes(message.certificate().getBytes());
+        }
     }
 
     /**
@@ -117,6 +121,12 @@ public final class MessageHeaderCodec {
         message.sender(peerAddress);
         message.senderSocket(senderSocket);
         message.recipientSocket(recipientSocket);
+        final int hasCertificate = buffer.readInt();
+        message.hasCerticate(hasCertificate);
+
+        if(hasCertificate == 1) {
+            message.certificate(readCertificate(buffer));
+        }
         return message;
     }
 
@@ -131,6 +141,19 @@ public final class MessageHeaderCodec {
         byte[] me = new byte[Number160.BYTE_ARRAY_SIZE];
         buffer.readBytes(me);
         return new Number160(me);
+    }
+
+    /**
+     * Reads a Certificate from a Netty buffer.
+     *
+     * @param buffer
+     *            The Netty buffer
+     * @return a base64 string representing the certificate
+     */
+    private static String readCertificate(final ByteBuf buffer) {
+        byte[] me = new byte[11];
+        buffer.readBytes(me);
+        return new String(me);
     }
 
     /**

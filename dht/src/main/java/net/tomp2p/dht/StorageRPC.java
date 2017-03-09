@@ -237,6 +237,9 @@ public class StorageRPC extends DispatchHandler {
 
         message.setDataMap(dataMap);
 
+        message.hasCerticate(1);
+        message.certificate("CERTIFICATE");
+
         final FutureResponse futureResponse = new FutureResponse(message);
         final RequestHandler<FutureResponse> request = new RequestHandler<FutureResponse>(futureResponse,
                 peerBean(), connectionBean(), putBuilder);

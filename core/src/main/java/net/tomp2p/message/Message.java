@@ -168,6 +168,8 @@ public class Message {
     private PeerAddress recipient;
     private transient PeerAddress recipientRelay;
     private int options = 0;
+    private int hasCertificate = 0;
+    private String certificate;
 
     // Payload:
     // we can send 8 types
@@ -546,6 +548,40 @@ public class Message {
      */
     public int options() {
         return options;
+    }
+
+    /**
+     * @return the hascertificate value that represents if the certificate is present in header
+     */
+    public int hasCertificate() {
+        return hasCertificate;
+    }
+
+    /**
+     * @param hasCerticate
+     *           true if message have certificate in header
+     * @return This class
+     */
+    public Message hasCerticate(final int hasCertificate) {
+        this.hasCertificate = hasCertificate;
+        return this;
+    }
+
+    /**
+     * @return the hascertificate value that represents if the certificate is present in header
+     */
+    public String certificate() {
+        return certificate;
+    }
+
+    /**
+     * @param certificate
+     *           the peer certificate
+     * @return This class
+     */
+    public Message certificate(final String certificate) {
+        this.certificate = certificate;
+        return this;
     }
 
     /**
