@@ -76,6 +76,8 @@ public class StorageRPC extends DispatchHandler {
     private final BloomfilterFactory factory;
     private final StorageLayer storageLayer;
     private ReplicationListener replicationListener = null;
+    private MessageVerifier messageVerifier;
+    private boolean enabledMessageVerifier = false;
 
     /**
      * Register the store rpc for put, compare put, get, add, and remove.
@@ -103,7 +105,13 @@ public class StorageRPC extends DispatchHandler {
         this.factory = peerBean.bloomfilterFactory();
         this.storageLayer = storageLayer;
     }
-    
+
+    public StorageRPC(final PeerBean peerBean, final ConnectionBean connectionBean, final StorageLayer storageLayer, MessageVerifier verifier) {
+        this(peerBean, connectionBean, storageLayer);
+        this.messageVerifier = verifier;
+        this.enabledMessageVerifier = true;
+    }
+
     public StorageRPC replicationListener(ReplicationListener replicationListener) {
     	this.replicationListener = replicationListener;
     	return this;
